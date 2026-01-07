@@ -1,0 +1,16 @@
+{
+  "name": "Cube Game TON",
+  "short_name": "CubeTON",
+  "description": "Telegram Mini App - Dice Game with TON",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0088cc",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2797/2797087.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
