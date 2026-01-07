@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎲 Cube Game | TON</title>
+    
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Иконки -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- TON Connect -->
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    
+    <style>
+        /* ========== СТИЛИ ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Основной контейнер */
+        .app-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+        }
+
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .balance-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .balance-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2em;
+        }
+
+        .balance-label {
+            opacity: 0.9;
+        }
+
+        .balance-amount {
+            font-weight: bold;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .balance-currency {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .btn-deposit {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-deposit:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Основной контент */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .section {
+            display: none;
+            padding: 20px;
+            height: 100%;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-header h2 {
+            color: #333;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            color: #666;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Секция кубов */
+        .cube-section {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .cube-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .cube-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+        }
+
+        .cube-info {
+            display: flex;
+            gap: 15px;
+        }
+
+        .win-chance {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        /* Кубик */
+        .dice-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 30px auto;
+        }
+
+        .dice {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border: 3px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .dice-face {
+            width: 80%;
+            height: 80%;
+            position: relative;
+        }
+
+        .dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #333;
+            border-radius: 50%;
+        }
+
+        .center {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .timer {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #e74c3c;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+        }
+
+        .rolling-text {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        /* Ставка */
+        .bet-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .bet-amount {
+            margin-bottom: 20px;
+        }
+
+        .bet-amount label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .amount-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .amount-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.2em;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .btn-amount {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-amount:hover {
+            background: #5a6fd8;
+            transform: scale(1.05);
+        }
+
+        .amount-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-quick {
+            flex: 1;
+            padding: 10px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 60px;
+        }
+
+        .btn-quick:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Типы ставок */
+        .bet-type {
+            margin-bottom: 20px;
+        }
+
+        .bet-type h4 {
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bet-options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .bet-option {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .bet-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .bet-option.active {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .option-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .option-header span:first-child {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .option-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+        }
+
+        .number-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .number {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .number:hover {
+            background: #f0f0f0;
+        }
+
+        .number.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.1);
+        }
+
+        /* Выбранные числа */
+        .selected-numbers {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        #numbersList {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        #numbersList span {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        /* Кнопка ставки */
+        .btn-bet {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-bet:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-bet:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Результат */
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        #resultMessage {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .result-dice {
+            font-size: 3em;
+            margin: 10px 0;
+        }
+
+        .result-win {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        /* Меню */
+        .menu-content {
+            padding: 20px;
+        }
+
+        .user-profile {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+        }
+
+        .username {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .menu-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .menu-item i:first-child {
+            color: #667eea;
+            margin-right: 10px;
+        }
+
+        .admin-section {
+            border-top: 2px solid #ddd;
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+
+        .withdraw-section {
+            margin: 20px 0;
+        }
+
+        .stats-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Инвентарь */
+        .inventory-content {
+            padding: 20px;
+        }
+
+        .empty-inventory {
+            text-align: center;
+            padding: 50px 20px;
+            color: #666;
+        }
+
+        .empty-inventory i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        /* Нижнее меню */
+        .bottom-nav {
+            display: flex;
+            background: white;
+            border-top: 2px solid #f0f0f0;
+            padding: 10px 0;
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            padding: 10px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-item:hover {
+            color: #667eea;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-item i {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .nav-item span {
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        /* Модальные окна */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #666;
+        }
+
+        .btn-confirm {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Промокоды */
+        .promo-result {
+            margin-top: 15px;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .promo-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .promo-preview h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        /* Вывод средств */
+        .wallet-address {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .wallet-address code {
+            font-size: 0.9em;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .withdraw-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            color: #1976d2;
+        }
+
+        /* Запросы на вывод */
+        .requests-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .request-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .request-address {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-approve, .btn-reject {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-approve {
+            background: #2ecc71;
+        }
+
+        .btn-reject {
+            background: #e74c3c;
+        }
+
+        /* Технические работы */
+        .maintenance-icon {
+            font-size: 60px;
+            color: #f39c12;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Утилиты */
+        .hidden {
+            display: none !important;
+        }
+
+        .small {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Анимации */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @keyframes diceRoll {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .dice-rolling {
+            animation: diceRoll 0.5s infinite;
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .app-container {
+                max-width: 100%;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .balance-info {
+                font-size: 1em;
+            }
+            
+            .balance-amount {
+                font-size: 1.2em;
+            }
+            
+            .dice-container {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .bet-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .amount-buttons {
+                flex-wrap: wrap;
+            }
+            
+            .btn-quick {
+                min-width: 45px;
+                padding: 8px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Главный контейнер -->
+    <div class="app-container">
+        <!-- Шапка с балансом -->
+        <header class="header">
+            <div class="balance-container">
+                <div class="balance-info">
+                    <span class="balance-label">💰 Баланс:</span>
+                    <span id="balance" class="balance-amount">0.00</span>
+                    <span class="balance-currency">TON</span>
+                </div>
+                <button id="depositBtn" class="btn-deposit" onclick="openDeposit()">
+                    <i class="fas fa-plus-circle"></i> Пополнить
+                </button>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Раздел игр (по умолчанию) -->
+            <section id="gamesSection" class="section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-gamepad"></i> Игры</h2>
+                </div>
+                
+                <!-- Кубы -->
+                <div class="cube-section">
+                    <div class="cube-header">
+                        <h3><i class="fas fa-dice"></i> Кубы</h3>
+                        <div class="cube-info">
+                            <span class="win-chance">Шанс: 16.67%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Кубик -->
+                    <div class="dice-container">
+                        <div id="dice" class="dice dice-1">
+                            <div class="dice-face">
+                                <div class="dot center"></div>
+                            </div>
+                        </div>
+                        <div id="timer" class="timer">5</div>
+                        <div id="rollingText" class="rolling-text hidden">Крутим...</div>
+                    </div>
+                    
+                    <!-- Ставка -->
+                    <div class="bet-section">
+                        <div class="bet-amount">
+                            <label for="betAmount"><i class="fas fa-coins"></i> Ставка (TON):</label>
+                            <div class="amount-input">
+                                <button class="btn-amount" onclick="changeBet(-0.1)">-0.1</button>
+                                <input type="number" id="betAmount" value="0.1" min="0.1" step="0.1">
+                                <button class="btn-amount" onclick="changeBet(0.1)">+0.1</button>
+                            </div>
+                            <div class="amount-buttons">
+                                <button class="btn-quick" onclick="setBet(0.1)">0.1</button>
+                                <button class="btn-quick" onclick="setBet(0.5)">0.5</button>
+                                <button class="btn-quick" onclick="setBet(1)">1</button>
+                                <button class="btn-quick" onclick="setBet(5)">5</button>
+                                <button class="btn-quick" onclick="setBet(10)">10</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Выбор ставки -->
+                        <div class="bet-type">
+                            <h4><i class="fas fa-bullseye"></i> Тип ставки:</h4>
+                            <div class="bet-options">
+                                <div class="bet-option active" data-type="single" onclick="selectBetType('single')">
+                                    <div class="option-header">
+                                        <span>1 число (3x)</span>
+                                        <span class="option-badge">Высокий риск</span>
+                                    </div>
+                                    <p>Выберите одно число от 1 до 6</p>
+                                    <div class="number-selector">
+                                        <div class="number" data-num="1" onclick="selectNumber(1)">1</div>
+                                        <div class="number" data-num="2" onclick="selectNumber(2)">2</div>
+                                        <div class="number" data-num="3" onclick="selectNumber(3)">3</div>
+                                        <div class="number" data-num="4" onclick="selectNumber(4)">4</div>
+                                        <div class="number" data-num="5" onclick="selectNumber(5)">5</div>
+                                        <div class="number" data-num="6" onclick="selectNumber(6)">6</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Выбранные числа -->
+                        <div id="selectedNumbers" class="selected-numbers hidden">
+                            <span>Выбрано: </span>
+                            <div id="numbersList"></div>
+                        </div>
+                        
+                        <!-- Кнопка ставки -->
+                        <button id="placeBetBtn" class="btn-bet" onclick="placeBet()">
+                            <i class="fas fa-play-circle"></i> Сделать ставку
+                        </button>
+                        
+                        <!-- Результат -->
+                        <div id="result" class="result hidden">
+                            <div id="resultMessage"></div>
+                            <div id="resultDice" class="result-dice"></div>
+                            <div id="resultWin" class="result-win"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Раздел меню -->
+            <section id="menuSection" class="section hidden">
+                <div class="section-header">
+                    <h2><i class="fas fa-bars"></i> Меню</h2>
+                    <button class="btn-close" onclick="openSection('games')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="menu-content">
+                    <!-- Профиль пользователя -->
+                    <div class="user-profile">
+                        <div id="userAvatar" class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div id="username" class="username">Гость</div>
+                    </div>
+                    
+                    <!-- Промокод -->
+                    <div class="promo-section">
+                        <div class="menu-item" onclick="openPromo()">
+                            <i class="fas fa-ticket-alt"></i>
+                            <span>Промокод</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Админ функции (только для @artem_shaveko) -->
+                    <div id="adminSection" class="admin-section hidden">
+                        <div class="menu-item" onclick="openCreatePromo()">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>Создать промокод</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="menu-item" onclick="openWithdrawalRequests()">
+                            <i class="fas fa-money-check-alt"></i>
+                            <span>Запросы на вывод</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                        <div class="menu-item" id="toggleAppBtn" onclick="toggleAppMode()">
+                            <i class="fas fa-power-off"></i>
+                            <span>Выключить</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Вывод средств -->
+                    <div class="withdraw-section">
+                        <div class="menu-item" onclick="openWithdraw()">
+                            <i class="fas fa-wallet"></i>
+                            <span>Вывести средства</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Статистика -->
+                    <div class="stats-section">
+                        <div class="stat-item">
+                            <span>Всего ставок:</span>
+                            <span id="totalBets">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Побед:</span>
+                            <span id="totalWins">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Проигрышей:</span>
+                            <span id="totalLosses">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Общий выигрыш:</span>
+                            <span id="totalWon">0 TON</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Раздел инвентаря -->
+            <section id="inventorySection" class="section hidden">
+                <div class="section-header">
+                    <h2><i class="fas fa-box"></i> Инвентарь</h2>
+                    <button class="btn-close" onclick="openSection('games')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="inventory-content">
+                    <div class="empty-inventory">
+                        <i class="fas fa-box-open"></i>
+                        <p>Инвентарь пуст</p>
+                        <small>Здесь будут отображаться ваши предметы</small>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Нижнее меню -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="openSection('games')">
+                <i class="fas fa-gamepad"></i>
+                <span>Игры</span>
+            </button>
+            <button class="nav-item" onclick="openSection('inventory')">
+                <i class="fas fa-box"></i>
+                <span>Инвентарь</span>
+            </button>
+            <button class="nav-item" onclick="openSection('menu')">
+                <i class="fas fa-bars"></i>
+                <span>Меню</span>
+            </button>
+        </nav>
+
+        <!-- Модальные окна -->
+        
+        <!-- Пополнение баланса -->
+        <div id="depositModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-wallet"></i> Пополнение баланса</h3>
+                    <button class="btn-close" onclick="closeModal('depositModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Минимальная сумма пополнения: <strong>0.1 TON</strong></p>
+                    
+                    <div class="wallet-connect" id="walletConnect">
+                        <p>Подключите Telegram Wallet для пополнения:</p>
+                        <button class="btn-connect" onclick="connectWallet()">
+                            <i class="fas fa-plug"></i> Подключить кошелек
+                        </button>
+                    </div>
+                    
+                    <div class="wallet-connected hidden" id="walletConnected">
+                        <p><i class="fas fa-check-circle"></i> Кошелек подключен</p>
+                    </div>
+                    
+                    <div class="deposit-amount">
+                        <label>Сумма пополнения (TON):</label>
+                        <input type="number" id="depositAmount" value="0.1" min="0.1" step="0.1">
+                        <div class="amount-buttons">
+                            <button onclick="setDeposit(0.1)">0.1</button>
+                            <button onclick="setDeposit(0.5)">0.5</button>
+                            <button onclick="setDeposit(1)">1</button>
+                            <button onclick="setDeposit(5)">5</button>
+                            <button onclick="setDeposit(10)">10</button>
+                        </div>
+                    </div>
+                    
+                    <div class="deposit-info">
+                        <p>Кошелек для перевода:</p>
+                        <div class="wallet-address">
+                            <code>UQAthS8QDwBDsbohkCxqfL22NS4NrtV9QMC1jBj78bb-4pVe</code>
+                            <button onclick="copyWalletAddress()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="small">После перевода баланс обновится автоматически</p>
+                    </div>
+                    
+                    <button class="btn-confirm" onclick="processDeposit()">
+                        <i class="fas fa-check"></i> Подтвердить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Промокод -->
+        <div id="promoModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-ticket-alt"></
