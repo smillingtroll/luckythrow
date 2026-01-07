@@ -1,0 +1,2 @@
+# luckythrow
+throw the dice
