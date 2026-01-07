@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎲 Live Cube Game | TON</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            max-width: 500px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        /* Шапка */
+        .game-header {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #334155;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .balance-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .balance-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+        
+        .btn-deposit {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Основной контент */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        /* Лайв-ставки */
+        .live-bets-section {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #334155;
+        }
+        
+        .live-bets-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .live-bets-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1em;
+        }
+        
+        .live-bets-count {
+            background: #3b82f6;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .bets-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .bet-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .bet-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+        }
+        
+        .bet-details {
+            text-align: right;
+        }
+        
+        .bet-amount {
+            color: #38bdf8;
+            font-weight: bold;
+        }
+        
+        .bet-numbers {
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+        
+        /* Игровая зона */
+        .game-section {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #334155;
+        }
+        
+        .timer-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .timer-circle {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .timer-progress {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(#3b82f6 0deg, #1e293b 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .timer-text {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .timer-label {
+            margin-top: 10px;
+            font-size: 1.1em;
+            color: #94a3b8;
+        }
+        
+        .dice-section {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        .dice::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ec4899);
+            border-radius: 17px;
+            z-index: -1;
+            animation: diceGlow 2s infinite;
+        }
+        
+        @keyframes diceGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        
+        /* Панель ставок */
+        .bet-panel {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #334155;
+        }
+        
+        .bet-amount-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .amount-btn {
+            flex: 1;
+            background: rgba(51, 65, 85, 0.7);
+            border: 1px solid #475569;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .amount-btn:hover, .amount-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-color: #3b82f6;
+        }
+        
+        .amount-input {
+            background: rgba(51, 65, 85, 0.7);
+            border: 1px solid #475569;
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .number-btn {
+            aspect-ratio: 1;
+            background: rgba(51, 65, 85, 0.7);
+            border: 2px solid #475569;
+            color: white;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .number-btn:hover, .number-btn.selected {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-color: #3b82f6;
+            transform: scale(1.05);
+        }
+        
+        .bet-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .bet-type-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(51, 65, 85, 0.7);
+            border: 1px solid #475569;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .bet-type-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            border-color: #3b82f6;
+        }
+        
+        .place-bet-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .place-bet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .place-bet-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* История игр */
+        .history-section {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #334155;
+        }
+        
+        .history-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-dice {
+            font-size: 1.2em;
+        }
+        
+        .history-result {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .win { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .loss { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        
+        /* Модальные окна */
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal.hidden { display: none; }
+        
+        .modal-content {
+            background: #1e293b;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+        
+        .modal-header {
+            background: rgba(30, 41, 59, 0.9);
+            padding: 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body { padding: 20px; }
+        
+        /* Нижнее меню */
+        .bottom-nav {
+            display: flex;
+            background: rgba(30, 41, 59, 0.95);
+            border-top: 1px solid #334155;
+            padding: 10px 0;
+        }
+        
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: #38bdf8;
+        }
+        
+        .nav-item i { font-size: 1.3em; margin-bottom: 5px; }
+        
+        /* Анимации */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .pulse { animation: pulse 2s infinite; }
+        
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        
+        /* Скроллбар */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.5); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        .hidden { display: none !important; }
+        
+        @media (max-width: 480px) {
+            .dice-section { flex-direction: column; gap: 20px; }
+            .dice { width: 70px; height: 70px; font-size: 2em; }
+            .timer-circle { width: 100px; height: 100px; }
+            .timer-text { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Шапка -->
+        <header class="game-header">
+            <div class="balance-widget">
+                <div>
+                    <div style="font-size:0.9em;color:#94a3b8;">Баланс</div>
+                    <div class="balance-amount" id="balance">10.00 TON</div>
+                </div>
+                <button class="btn-deposit" onclick="openDeposit()">
+                    <i class="fas fa-plus"></i> Пополнить
+                </button>
+            </div>
+            <div style="text-align:right;">
+                <div style="font-size:0.9em;color:#94a3b8;">Игроков онлайн</div>
+                <div id="onlineCount" style="font-weight:bold;">1</div>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Лайв-ставки -->
+            <section class="live-bets-section">
+                <div class="live-bets-header">
+                    <div class="live-bets-title">
+                        <i class="fas fa-bolt" style="color:#fbbf24;"></i>
+                        <span>Live-ставки</span>
+                        <div class="live-bets-count" id="betsCount">0</div>
+                    </div>
+                    <div style="color:#94a3b8;font-size:0.9em;">
+                        Раунд #<span id="roundNumber">1</span>
+                    </div>
+                </div>
+                <div class="bets-list" id="betsList">
+                    <!-- Список ставок будет здесь -->
+                </div>
+            </section>
+
+            <!-- Игровая зона -->
+            <section class="game-section">
+                <div class="timer-section">
+                    <div class="timer-circle">
+                        <div class="timer-progress" id="timerProgress">
+                            <div class="timer-text" id="timer">30</div>
+                        </div>
+                    </div>
+                    <div class="timer-label" id="timerLabel">До следующего броска</div>
+                </div>
+                
+                <div class="dice-section">
+                    <div class="dice" id="prevDice">⚀</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.9em;color:#94a3b8;margin-bottom:5px;">Следующий бросок</div>
+                        <div class="dice pulse" id="nextDice">?</div>
+                    </div>
+                    <div class="dice" id="currentDice">⚁</div>
+                </div>
+                
+                <div style="text-align:center;margin-top:20px;color:#94a3b8;">
+                    <div>Сумма ставок в раунде: <span id="roundTotal" style="color:#38bdf8;font-weight:bold;">0 TON</span></div>
+                </div>
+            </section>
+
+            <!-- Панель ставок -->
+            <section class="bet-panel">
+                <div class="bet-amount-controls">
+                    <button class="amount-btn" onclick="setBetAmount(0.1)">0.1</button>
+                    <button class="amount-btn" onclick="setBetAmount(0.5)">0.5</button>
+                    <button class="amount-btn" onclick="setBetAmount(1)">1</button>
+                    <button class="amount-btn" onclick="setBetAmount(5)">5</button>
+                    <button class="amount-btn active" onclick="setBetAmount(10)">10</button>
+                </div>
+                
+                <input type="number" class="amount-input" id="betAmount" value="10" min="0.1" step="0.1">
+                
+                <div class="bet-type-selector">
+                    <button class="bet-type-btn active" onclick="selectBetType('single')">1 число (3x)</button>
+                    <button class="bet-type-btn" onclick="selectBetType('double')">2 числа (1.5x)</button>
+                    <button class="bet-type-btn" onclick="selectBetType('triple')">3 числа (1.25x)</button>
+                </div>
+                
+                <div class="numbers-grid" id="numbersGrid">
+                    <!-- Числа 1-6 -->
+                </div>
+                
+                <button class="place-bet-btn" id="placeBetBtn" onclick="placeBet()">
+                    <i class="fas fa-coins"></i>
+                    <span>Сделать ставку</span>
+                </button>
+            </section>
+
+            <!-- История игр -->
+            <section class="history-section">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
+                    <div style="font-weight:bold;">История бросков</div>
+                    <div style="color:#94a3b8;font-size:0.9em;" id="winRate">Винрейт: 0%</div>
+                </div>
+                <div class="history-list" id="historyList">
+                    <!-- История будет здесь -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Нижнее меню -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="openSection('game')">
+                <i class="fas fa-gamepad"></i>
+                <span style="font-size:0.8em;">Игра</span>
+            </button>
+            <button class="nav-item" onclick="openSection('stats')">
+                <i class="fas fa-chart-bar"></i>
+                <span style="font-size:0.8em;">Статистика</span>
+            </button>
+            <button class="nav-item" onclick="openSection('profile')">
+                <i class="fas fa-user"></i>
+                <span style="font-size:0.8em;">Профиль</span>
+            </button>
+            <button class="nav-item" onclick="openSection('menu')">
+                <i class="fas fa-bars"></i>
+                <span style="font-size:0.8em;">Меню</span>
+            </button>
+        </nav>
+
+        <!-- Модальные окна -->
+        <div id="depositModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Пополнение баланса</h3>
+                    <button class="btn-close" onclick="closeModal('depositModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Содержимое модалки -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== КОНФИГУРАЦИЯ ====================
+        const CONFIG = {
+            ROUND_TIME: 30, // секунд между бросками
+            MIN_BET: 0.1,
+            MAX_BET: 1000,
+            ADMIN_USERNAME: '@artem_shaveko',
+            TON_WALLET: 'UQAthS8QDwBDsbohkCxqfL22NS4NrtV9QMC1jBj78bb-4pVe'
+        };
+
+        // ==================== СОСТОЯНИЕ ====================
+        let state = {
+            balance: 1000.00,
+            selectedBetType: 'single',
+            selectedNumbers: [1],
+            betAmount: 10,
+            roundTime: CONFIG.ROUND_TIME,
+            gameActive: true,
+            currentRound: 1,
+            liveBets: [],
+            gameHistory: [],
+            userStats: {
+                totalBets: 0,
+                wins: 0,
+                losses: 0,
+                profit: 0
+            }
+        };
+
+        // Имитация онлайн-пользователей
+        let onlinePlayers = 1;
+        let roundTotal = 0;
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎲 Live Cube Game loaded!');
+            initGame();
+            startGameLoop();
+            generateNumbersGrid();
+            updateUI();
+            simulateOnlineActivity();
+        });
+
+        function initGame() {
+            // Инициализация Telegram Web App
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.expand();
+                window.Telegram.WebApp.ready();
+            }
+            
+            // Загрузка из localStorage
+            loadState();
+            
+            // Начальная история
+            addToHistory(4, 'loss');
+            addToHistory(6, 'win');
+            addToHistory(2, 'loss');
+            addToHistory(5, 'win');
+            
+            // Начальные live-ставки
+            simulateLiveBets();
+        }
+
+        // ==================== ИГРОВОЙ ЦИКЛ ====================
+        let gameTimer;
+        function startGameLoop() {
+            clearInterval(gameTimer);
+            
+            gameTimer = setInterval(() => {
+                state.roundTime--;
+                
+                // Обновление таймера
+                updateTimer();
+                
+                // Обновление progress circle
+                const progress = (state.roundTime / CONFIG.ROUND_TIME) * 360;
+                document.getElementById('timerProgress').style.background = 
+                    `conic-gradient(#3b82f6 ${progress}deg, #1e293b ${progress}deg)`;
+                
+                // Когда время вышло
+                if (state.roundTime <= 0) {
+                    executeRound();
+                }
+            }, 1000);
+        }
+
+        function updateTimer() {
+            document.getElementById('timer').textContent = state.roundTime;
+            
+            if (state.roundTime <= 5) {
+                document.getElementById('timer').style.color = '#ef4444';
+                document.getElementById('timerLabel').textContent = 'Скоро бросок!';
+            } else if (state.roundTime <= 10) {
+                document.getElementById('timerLabel').textContent = 'Заканчивается время';
+            } else {
+                document.getElementById('timerLabel').textContent = 'До следующего броска';
+            }
+        }
+
+        function executeRound() {
+            // Генерация результата
+            const diceResult = Math.floor(Math.random() * 6) + 1;
+            
+            // Обновление кубиков
+            document.getElementById('prevDice').textContent = document.getElementById('currentDice').textContent;
+            document.getElementById('currentDice').textContent = getDiceEmoji(diceResult);
+            document.getElementById('nextDice').textContent = '?';
+            
+            // Анимация
+            document.getElementById('currentDice').classList.add('pulse');
+            setTimeout(() => {
+                document.getElementById('currentDice').classList.remove('pulse');
+            }, 1000);
+            
+            // Обработка ставок
+            processBets(diceResult);
+            
+            // Добавление в историю
+            addToHistory(diceResult, 'processing');
+            
+            // Сброс таймера
+            state.roundTime = CONFIG.ROUND_TIME;
+            state.currentRound++;
+            roundTotal = 0;
+            
+            // Обновление UI
+            document.getElementById('roundNumber').textContent = state.currentRound;
+            document.getElementById('roundTotal').textContent = '0 TON';
+            updateTimer();
+            
+            // Очистка live-ставок
+            state.liveBets = [];
+            updateLiveBets();
+            
+            // Симуляция новых ставок
+            setTimeout(simulateLiveBets, 2000);
+        }
+
+        // ==================== LIVE-СТАВКИ ====================
+        function simulateLiveBets() {
+            if (!state.gameActive) return;
+            
+            // Симуляция ставок других игроков
+            const simulatedBets = [
+                { user: 'Alex', amount: 2.5, numbers: [3], type: 'single', time: 'now' },
+                { user: 'CryptoKing', amount: 5, numbers: [2, 5], type: 'double', time: '10s ago' },
+                { user: 'TON_lover', amount: 1.2, numbers: [4], type: 'single', time: '15s ago' },
+                { user: 'Lucky777', amount: 7.5, numbers: [1, 3, 6], type: 'triple', time: '20s ago' },
+                { user: 'Pro_Gamer', amount: 3.8, numbers: [6], type: 'single', time: '25s ago' }
+            ];
+            
+            // Добавляем ставки по очереди с задержкой
+            simulatedBets.forEach((bet, index) => {
+                setTimeout(() => {
+                    if (state.gameActive) {
+                        addLiveBet(bet);
+                        roundTotal += bet.amount;
+                        document.getElementById('roundTotal').textContent = `${roundTotal.toFixed(2)} TON`;
+                    }
+                }, index * 3000); // Каждые 3 секунды новая ставка
+            });
+        }
+
+        function addLiveBet(bet) {
+            state.liveBets.unshift(bet);
+            if (state.liveBets.length > 10) {
+                state.liveBets = state.liveBets.slice(0, 10);
+            }
+            updateLiveBets();
+            
+            // Анимация нового элемента
+            const betsList = document.getElementById('betsList');
+            if (betsList.firstChild) {
+                betsList.firstChild.classList.add('slide-in');
+            }
+        }
+
+        function updateLiveBets() {
+            const betsList = document.getElementById('betsList');
+            betsList.innerHTML = '';
+            
+            state.liveBets.forEach(bet => {
+                const betElement = document.createElement('div');
+                betElement.className = 'bet-item slide-in';
+                betElement.innerHTML = `
+                    <div class="bet-user">
+                        <div class="user-avatar">${bet.user.charAt(0)}</div>
+                        <div>
+                            <div style="font-weight:bold;">${bet.user}</div>
+                            <div style="font-size:0.8em;color:#94a3b8;">${bet.time}</div>
+                        </div>
+                    </div>
+                    <div class="bet-details">
+                        <div class="bet-amount">${bet.amount} TON</div>
+                        <div class="bet-numbers">${bet.numbers.join(', ')}</div>
+                    </div>
+                `;
+                betsList.appendChild(betElement);
+            });
+            
+            document.getElementById('betsCount').textContent = state.liveBets.length;
+        }
+
+        // ==================== ИГРОКОВ ОНЛАЙН ====================
+        function simulateOnlineActivity() {
+            setInterval(() => {
+                // Случайное изменение количества онлайн
+                const change = Math.random() > 0.5 ? 1 : -1;
+                onlinePlayers = Math.max(1, onlinePlayers + change);
+                document.getElementById('onlineCount').textContent = onlinePlayers;
+                
+                // Случайные сообщения в чате
+                if (Math.random() > 0.7) {
+                    const messages = [
+                        "Еще один выигрыш! 🎉",
+                        "Почти угадал...",
+                        "Кто ставит на 6?",
+                        "Удачи всем! 🍀",
+                        "TON to the moon! 🚀"
+                    ];
+                    // Можно добавить систему чата
+                }
+            }, 5000);
+        }
+
+        // ==================== СТАВКИ ИГРОКА ====================
+        function generateNumbersGrid() {
+            const grid = document.getElementById('numbersGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= 6; i++) {
+                const btn = document.createElement('button');
+                btn.className = `number-btn ${state.selectedNumbers.includes(i) ? 'selected' : ''}`;
+                btn.textContent = i;
+                btn.onclick = () => selectNumber(i);
+                grid.appendChild(btn);
+            }
+        }
+
+        function selectNumber(num) {
+            if (state.selectedBetType === 'single') {
+                state.selectedNumbers = [num];
+            } else if (state.selectedBetType === 'double') {
+                if (state.selectedNumbers.includes(num)) {
+                    state.selectedNumbers = state.selectedNumbers.filter(n => n !== num);
+                } else if (state.selectedNumbers.length < 2) {
+                    state.selectedNumbers.push(num);
+                }
+            } else if (state.selectedBetType === 'triple') {
+                if (state.selectedNumbers.includes(num)) {
+                    state.selectedNumbers = state.selectedNumbers.filter(n => n !== num);
+                } else if (state.selectedNumbers.length < 3) {
+                    state.selectedNumbers.push(num);
+                }
+            }
+            
+            generateNumbersGrid();
+        }
+
+        function selectBetType(type) {
+            state.selectedBetType = type;
+            state.selectedNumbers = type === 'single' ? [1] : type === 'double' ? [1, 2] : [1, 2, 3];
+            
+            // Обновление кнопок
+            document.querySelectorAll('.bet-type-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            generateNumbersGrid();
+        }
+
+        function setBetAmount(amount) {
+            state.betAmount = amount;
+            document.getElementById('betAmount').value = amount;
+            
+            // Обновление кнопок
+            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function placeBet() {
+            if (state.betAmount < CONFIG.MIN_BET) {
+                showAlert(`Минимальная ставка: ${CONFIG.MIN_BET} TON`);
+                return;
+            }
+            
+            if (state.betAmount > state.balance) {
+                showAlert('Недостаточно средств');
+                return;
+            }
+            
+            if (state.selectedNumbers.length === 0) {
+                showAlert('Выберите числа для ставки');
+                return;
+            }
+            
+            if (state.roundTime <= 3) {
+                showAlert('Слишком поздно для ставки! Ждите следующий раунд');
+                return;
+            }
+            
+            // Списываем средства
+            state.balance -= state.betAmount;
+            state.userStats.totalBets++;
+            
+            // Добавляем свою ставку в live
+            const userBet = {
+                user: 'Вы',
+                amount: state.betAmount,
+                numbers: [...state.selectedNumbers],
+                type: state.selectedBetType,
+                time: 'now'
+            };
+            
+            addLiveBet(userBet);
+            roundTotal += state.betAmount;
+            
+            // Обновление UI
+            updateUI();
+            updateRoundTotal();
+            
+            showAlert(`Ставка ${state.betAmount} TON принята! Удачи!`);
+            
+            // Сохранение
+            saveState();
+        }
+
+        function processBets(diceResult) {
+            // Здесь будет обработка всех ставок
+            // В реальном проекте это делается на сервере
+            
+            // Обновляем историю с результатом
+            const lastHistory = state.gameHistory[0];
+            if (lastHistory && lastHistory.result === 'processing') {
+                lastHistory.result = Math.random() > 0.5 ? 'win' : 'loss';
+                lastHistory.dice = diceResult;
+                updateHistory();
+            }
+        }
+
+        // ==================== ИСТОРИЯ ====================
+        function addToHistory(dice, result) {
+            state.gameHistory.unshift({
+                dice: dice,
+                result: result,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+            
+            if (state.gameHistory.length > 10) {
+                state.gameHistory = state.gameHistory.slice(0, 10);
+            }
+            
+            updateHistory();
+        }
+
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            
+            state.gameHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div class="history-dice">${getDiceEmoji(item.dice)}</div>
+                        <div>${item.time}</div>
+                    </div>
+                    <div class="history-result ${item.result}">
+                        ${item.result === 'win' ? 'WIN' : 
+                          item.result === 'loss' ? 'LOSS' : '...'}
+                    </div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+            
+            // Расчет винрейта
+            const wins = state.gameHistory.filter(h => h.result === 'win').length;
+            const total = state.gameHistory.filter(h => h.result !== 'processing').length;
+            const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+            document.getElementById('winRate').textContent = `Винрейт: ${winRate}%`;
+        }
+
+        // ==================== УТИЛИТЫ ====================
+        function getDiceEmoji(number) {
+            const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+            return diceEmojis[number - 1] || '⚀';
+        }
+
+        function updateUI() {
+            document.getElementById('balance').textContent = `${state.b
